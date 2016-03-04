@@ -1,0 +1,23 @@
+{
+    "name": "diuit/diuit-session-token-helper",
+    "description": "Diuit Session Token Helper, to make easier the session token creating process",
+    "license": "Apache-2.0",
+    "version": "0.1.0",
+    "keywords": ["diuit","JWT"],
+    "authors": [
+        {
+            "name": "Pofat Tseng",
+            "email": "pofattseng@diuit.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4.0",
+        "lcobucci/jwt": "^3.1"
+    },
+    "autoload": {
+        "psr-0": {
+            "Diuit": "src/"
+        }
+    }
+}
