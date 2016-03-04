@@ -8,7 +8,7 @@ Package is available on [Packagist](https://packagist.org/packages/diuit/diuit-s
 you can install it using [Composer](http://getcomposer.org).
 
 ```shell
-composer require diuit/diuit-session-token-helper
+composer require diuitapi/php-session-helper dev-master
 ```
 
 ### Dependencies
@@ -27,7 +27,7 @@ use Diuit\DiuitTokenHelper;
 $session = (new DiuitTokenHelper())->setAppId('your_app_id') // Configures app ID
                         ->setAppKey('your_app_key') // Configures app key
                         ->setKeyID('your_key_id') // Configures key id for finding public key
-                        ->setPrivateKey('file://your_pem_file_path') // Configures private key (you can either use file path or a string for your private key)
+                        ->setPrivateKey('file://your_pem_file_path') // Configures private key (you can either use file path or plain text)
                         ->setUserSerial('user_serial') // Configures user serial
                         ->setExpDuration(7*24*3600) // Configures length of session valid duration (in seconds), example is in length of a week
                         ->getSessionToken('your_device_serial', 'gcm', 'device_push_token'); // Configures device serial, platform and push token(optional) and retrieves session token
