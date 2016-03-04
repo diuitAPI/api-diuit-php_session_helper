@@ -1,5 +1,5 @@
 {
-    "name": "diuitAPI/diuit.api.php-session-helper",
+    "name": "diuitapi/php-session-helper",
     "description": "Diuit Session Token Helper, to make easier the session token creating process",
     "homepage" : "https://github.com/diuitAPI/diuit.api.php-session-helper",
     "license": "Apache-2.0",
