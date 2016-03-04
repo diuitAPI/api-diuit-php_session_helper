@@ -1,8 +1,9 @@
 {
-    "name": "diuit/diuit-session-token-helper",
+    "name": "diuitAPI/diuit.api.php-session-helper",
     "description": "Diuit Session Token Helper, to make easier the session token creating process",
+    "homepage" : "https://github.com/diuitAPI/diuit.api.php-session-helper",
     "license": "Apache-2.0",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "keywords": ["diuit","JWT"],
     "authors": [
         {
