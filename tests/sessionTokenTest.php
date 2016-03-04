@@ -49,6 +49,6 @@ CCc=
 		                                 ->setPrivateKey($pvrKeyPath)
 		                                 ->setExpDuration(7*24*3600)
 		                                 ->getSessionToken($deviceId, $platform, $pushToken);
-		$this->assertNotEquals($session->session, '', 'session token should not be null');
+		$this->assertNotEquals($session, '', 'session token should not be null');
 	}
 }

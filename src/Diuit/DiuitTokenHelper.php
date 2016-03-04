@@ -128,11 +128,12 @@ class DiuitTokenHelper
      */
 	public function getSessionToken($deviceId, $platform, $pushToken = null)
 	{
+		$headers = array("x-diuit-application-id: " . $this->_appId, "x-diuit-app-key: " . $this->_appKey, 'Content-type: application/x-www-form-urlencoded');
 		// get nonce
 		$nonceUrl = 'https://api.diuit.net/1/auth/nonce';
 		$nonceOp = array(
 		    'http' => array(
-		        'header'  => array("x-diuit-application-id: " . $this->_appId, "x-diuit-api-key: " . $this->_appKey),
+		        'header'  => $headers,
 		        'method'  => 'GET',
 		    ),
 		);
@@ -172,7 +173,7 @@ class DiuitTokenHelper
 		}
 		$postOp = array(
 		    'http' => array(
-		        'header'  => array("x-diuit-application-id: " . $this->_appId, "x-diuit-api-key: " . $this->_appKey, 'Content-type: application/x-www-form-urlencoded'),
+		        'header'  => $headers,
 		        'method'  => 'POST',
 		        'content' => http_build_query($data),
 		    ),
@@ -184,7 +185,7 @@ class DiuitTokenHelper
 		$sessionJson = json_decode($returnData);
 		$sessionToken = $sessionJson->session;
 		echo "\nsession:" . $sessionToken;
-		return $sessionJson;
+		return $sessionToken;
 	}
 }
 ?>
