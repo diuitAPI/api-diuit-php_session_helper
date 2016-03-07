@@ -12,7 +12,7 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
  * @author   Pofat Tseng <pofattseng@diuit.com>
  */
 
-class DiuitTokenHelper 
+class DiuitTokenHelper
 {
 	private $_appId;
 	private $_appKey;
@@ -20,19 +20,19 @@ class DiuitTokenHelper
 	private $_keyID;
 	private $_privateKey;
 	private $_expDuration;
-	
+
 	/**
      * Initializes a new DiuitSessionTokenHelper
      *
-     */	
-	public function __construct() 
+     */
+	public function __construct()
 	{
 		// JWT requires timezeone to be set
 		if (!ini_get('date.timezone')) {
 		    date_default_timezone_set('GMT');
-		}		
+		}
 	}
-	
+
 	/**
      * Configures appId
      *
@@ -45,7 +45,7 @@ class DiuitTokenHelper
 		$this->_appId = $appId;
 		return $this;
 	}
-	
+
 	/**
      * Configures appKey
      *
@@ -58,7 +58,7 @@ class DiuitTokenHelper
 		$this->_appKey = $appKey;
 		return $this;
 	}
-	
+
 	/**
      * Configures user serial
      *
@@ -71,14 +71,14 @@ class DiuitTokenHelper
 		$this->_userSerial = $userSerial;
 		return $this;
 	}
-	
+
 	/**
      * Configures key id (for finding public key)
      *
      * @param string $keyID
      *
      * @return diuitTokenHelper
-     */	
+     */
 	public function setKeyID($keyID)
 	{
 		$this->_keyID = $keyID;
@@ -97,7 +97,7 @@ class DiuitTokenHelper
 		$this->_privateKey = $privateKey;
 		return $this;
 	}
-	
+
 	/**
      * Configures valid duration (in second)
      *
@@ -110,7 +110,7 @@ class DiuitTokenHelper
 		$this->_expDuration = $duration;
 		return $this;
 	}
-	
+
 	/**
      * Get session token, $deviceId and $platform are required
      *
@@ -128,23 +128,35 @@ class DiuitTokenHelper
      */
 	public function getSessionToken($deviceId, $platform, $pushToken = null)
 	{
-		$headers = array("x-diuit-application-id: " . $this->_appId, "x-diuit-app-key: " . $this->_appKey, 'Content-type: application/x-www-form-urlencoded');
+		$headers = array("x-diuit-application-id: " . $this->_appId, "x-diuit-app-key: " . $this->_appKey, 'Content-type: application/json');
 		// get nonce
-		$nonceUrl = 'https://api.diuit.net/1/auth/nonce';
-		$nonceOp = array(
-		    'http' => array(
-		        'header'  => $headers,
-		        'method'  => 'GET',
-		    ),
-		);
-		$nonceContx  = stream_context_create($nonceOp);
-		$result = fopen($nonceUrl, 'r', false, $nonceContx);
-		$nonceData = stream_get_contents($result);
-		fclose($result);
-		$nonceObj = json_decode($nonceData);
-		$nonce = $nonceObj->nonce;
+		$nonceJson = $this->doGET('https://api.diuit.net/1/auth/nonce', $headers);
+		$nonce = $nonceJson->nonce;
 		echo "nonce:" . $nonce;
 		// generate JWT
+		$jwt = $this->generateAuthJWT($nonce);
+		// retrieve session token
+		$data = array('jwt' => substr($jwt, 0), 'deviceId' => $deviceId, 'platform' => $platform);
+		if ($pushToken) {
+			$data['pushToken'] = $pushToken;
+		}
+
+		$sessionJSON = $this->doPOST('https://api.diuit.net/1/auth/login', $headers, $data);
+		$sessionToken = $sessionJSON->session;
+		echo "\nsession:" . $sessionToken;
+		return $sessionToken;
+	}
+
+	/**
+		 * Generate JWT string
+		 *
+		 * @param string $nonce
+		 *
+		 * @return Token
+		 *
+		 */
+	public function generateAuthJWT($nonce)
+	{
 		$signer = new Sha256();
 		$pvKey = new Key($this->_privateKey);
 		$now = gmdate("Y-m-d H:i:s", time());
@@ -156,36 +168,63 @@ class DiuitTokenHelper
 		$token = (new Builder())->setHeader('alg','RS256')
 								->setHeader('cty','diuit-auth;v=1')
 								->setHeader('kid',$this->_keyID)
-								->setIssuer($this->_appId) // Configures the issuer
+								->setIssuer($this->_appId)
 								->setSubject($this->_userSerial)
 		                        ->set("iat", $iat)
 		                        ->set("exp", $exp)
 		                        ->set("nonce", $nonce)
 		                        ->sign($signer, $pvKey)
 		                        ->getToken(); // Retrieves the generated token
-		$jwt = substr($token, 0); //JWT.toString
+		return $token;
+	}
 
-		// retrieve session token
-		$url = 'https://api.diuit.net/1/auth/login';
-		$data = array('jwt' => $jwt, 'deviceId' => $deviceId, 'platform' => $platform);
-		if ($pushToken) {
-			$data['pushToken'] = $pushToken;
-		}
-		$postOp = array(
+	/**
+     * do GET request
+     *
+     * @param string $url
+     * @param array $headers
+     *
+     * @return JSON
+     *
+     */
+	private function doGET($url, $headers)
+	{
+		$options = array(
+		    'http' => array(
+		        'header'  => $headers,
+		        'method'  => 'GET',
+		    ),
+		);
+		$context  = stream_context_create($options);
+		$result = fopen($url, 'r', false, $context);
+		$contents = stream_get_contents($result);
+		fclose($result);
+		return json_decode($contents);
+	}
+	/**
+     * do POST request
+     *
+     * @param string $url
+     * @param array $headers
+		 * @param array $obdy
+     *
+     * @return JSON
+     *
+     */
+	private function doPOST($url, $headers, $body)
+	{
+		$options = array(
 		    'http' => array(
 		        'header'  => $headers,
 		        'method'  => 'POST',
-		        'content' => http_build_query($data),
+		        'content' => json_encode($body),
 		    ),
 		);
-		$postContext  = stream_context_create($postOp);
-		$postResult = fopen($url, 'r', false, $postContext);
-		$returnData = stream_get_contents($postResult);
-		fclose($postResult);
-		$sessionJson = json_decode($returnData);
-		$sessionToken = $sessionJson->session;
-		echo "\nsession:" . $sessionToken;
-		return $sessionToken;
+		$context  = stream_context_create($options);
+		$result = fopen($url, 'r', false, $context);
+		$contents = stream_get_contents($result);
+		fclose($result);
+		return json_decode($contents);
 	}
 }
 ?>
