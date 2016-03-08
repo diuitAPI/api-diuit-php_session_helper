@@ -14,6 +14,7 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 class DiuitTokenHelper
 {
+	private $_supportPlatform = array('gcm', 'ios_sandbox', 'ios_production');
 	private $_appId;
 	private $_appKey;
 	private $_userSerial;
@@ -31,6 +32,13 @@ class DiuitTokenHelper
 		if (!ini_get('date.timezone')) {
 		    date_default_timezone_set('GMT');
 		}
+		// init values
+		$this->_appId = '';
+		$this->_appKey = '';
+		$this->_userSerial = '';
+		$this->_keyID = '';
+		$this->_privateKey = '';
+		$this->_expDuration = 0;
 	}
 
 	/**
@@ -128,6 +136,13 @@ class DiuitTokenHelper
      */
 	public function getSessionToken($deviceId, $platform, $pushToken = null)
 	{
+		$this->_checkRequireFields();
+		if (!in_array($platform, $this->_supportPlatform))
+		{
+			trigger_error("platform only support " . implode(',', $this->_supportPlatform), E_USER_ERROR);
+			return;
+		}
+
 		$headers = array("x-diuit-application-id: " . $this->_appId, "x-diuit-app-key: " . $this->_appKey, 'Content-type: application/json');
 		// get nonce
 		$nonceJson = $this->doGET('https://api.diuit.net/1/auth/nonce', $headers);
@@ -143,12 +158,11 @@ class DiuitTokenHelper
 
 		$sessionJSON = $this->doPOST('https://api.diuit.net/1/auth/login', $headers, $data);
 		$sessionToken = $sessionJSON->session;
-		echo "\nsession:" . $sessionToken;
 		return $sessionToken;
 	}
 
 	/**
-		 * Generate JWT string
+		 * Generate JWT
 		 *
 		 * @param string $nonce
 		 *
@@ -157,6 +171,8 @@ class DiuitTokenHelper
 		 */
 	public function generateAuthJWT($nonce)
 	{
+		$this->_checkRequireFields();
+
 		$signer = new Sha256();
 		$pvKey = new Key($this->_privateKey);
 		$now = gmdate("Y-m-d H:i:s", time());
@@ -225,6 +241,40 @@ class DiuitTokenHelper
 		$contents = stream_get_contents($result);
 		fclose($result);
 		return json_decode($contents);
+	}
+
+	private function _checkRequireFields()
+	{
+		$errorStrs = array();
+
+		if ($this->_appId == '') {
+			array_push($errorStrs, 'app_Id');
+		}
+
+		if ($this->_appKey == '') {
+			array_push($errorStrs, 'app_Key');
+		}
+
+		if ($this->_userSerial == '') {
+			array_push($errorStrs, 'user_serial');
+		}
+
+		if ($this->_keyID == '') {
+			array_push($errorStrs, 'key_id');
+		}
+
+		if ($this->_privateKey == '') {
+			array_push($errorStrs, 'private_key');
+		}
+
+		if ($this->_expDuration == 0) {
+			array_push($errorStrs, 'expire_duration');
+		}
+
+		if (count($errorStrs) > 0) {
+      $joined = implode(',', $errorStrs);
+      trigger_error("$joined  not configured.", E_USER_ERROR);
+    }
 	}
 }
 ?>
