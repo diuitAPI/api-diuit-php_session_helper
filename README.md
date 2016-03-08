@@ -8,7 +8,7 @@ Package is available on [Packagist](https://packagist.org/packages/diuit/diuit-s
 you can install it using [Composer](http://getcomposer.org).
 
 ```shell
-composer require diuitapi/php-session-helper dev-master
+composer require diuitapi/php-session-helper
 ```
 
 ### Dependencies
